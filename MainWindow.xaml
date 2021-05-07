@@ -1,0 +1,155 @@
+﻿<Window x:Class="ValheimPatcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ValheimPatcher"
+        mc:Ignorable="d"
+        ResizeMode="NoResize"
+        Title="Valheim Patcher" 
+        Height="950" 
+        Width="550">
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="5*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <Image
+            Grid.Row="0"
+            Margin="2"
+            Source="Images/darkheim.png"/>
+
+        <Grid
+            Margin="12"
+            Grid.Row="1">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid
+                Grid.Row="0">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox
+                    x:Name="tbValheimFolder"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    IsEnabled="False"
+                    TextAlignment="Center" />
+
+                <Label
+                    x:Name="lbInstallFolder"
+                    Grid.Row="0"
+                    VerticalAlignment="Center"
+                    Content="Install Folder" />
+
+            </Grid>
+
+            <Button
+                x:Name="btnPickFolder"
+                Grid.Row="1"
+                Padding="12,3,12,3"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Content="Pick Folder"/>
+
+            <CheckBox
+                x:Name="cbUseNexus"
+                Grid.Row="2"
+                Content="Prefer Nexus download (this will require you to enter an API key)"
+                VerticalAlignment="Center" />
+
+            <Label
+                x:Name="lbNexusKey"
+                Grid.Row="3"
+                VerticalAlignment="Bottom"
+                Content="Nexus API key" />
+
+            <Grid
+                Grid.Row="4">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox
+                    x:Name="tbNexusApiKey"
+                    VerticalAlignment="Center"
+                    Grid.Column="0" />
+
+                <Button
+                    x:Name="btnGetKey"
+                    Grid.Column="1"
+                    Content="Get API key"
+                    Padding="12,3"
+                    Margin="12,0,0,0"/>
+
+            </Grid>
+
+        </Grid>
+
+        <Grid
+            Grid.Row="2">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Label
+                x:Name="lbLogTitle"
+                Grid.Row="0"
+                Margin="12,0"
+                Content="Log" />
+
+            <TextBox
+                x:Name="tbLogOutput"
+                Grid.Row="1"
+                Margin="12,0"
+                TextWrapping="WrapWithOverflow" />
+            
+        </Grid>
+
+        <Grid
+            Grid.Row="3">
+
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid
+                Grid.Row="1">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    x:Name="btnPatch"
+                    Grid.Column="1"
+                    Margin="12"
+                    Content="Patch" />
+
+            </Grid>
+
+        </Grid>
+        
+    </Grid>
+</Window>

@@ -10,19 +10,29 @@ namespace ValheimPatcher
 {
     class PluginInstaller
     {
-
+        // Class parameters
         private string installFolder;
         private ModListItem[] mods;
         private string nexusApiKey;
         private bool useNexus;
 
-        private int awaiting;
-        private int completed;
+        // Tracking for mod installs
+        private int awaiting;  // number to be processed
+        private int completed; // number currently completed
 
+        // Mods that could not be downloaded
         private List<ModListItem> missing = new();
-
+        
+        // Action to take when all mods are installed
         private Action onDoneInstall;
 
+        /// <summary>
+        /// Setup plugin installer
+        /// </summary>
+        /// <param name="folder">Valheim install folder</param>
+        /// <param name="mods">list of mods to install</param>
+        /// <param name="nexusApiKey">Nexus API key</param>
+        /// <param name="useNexus">Whether to prefer Nexus API over manifest downloadUrl</param>
         public PluginInstaller(string folder, ModListItem[] mods, string nexusApiKey, bool useNexus)
         {
             installFolder = folder + "\\BepInEx\\plugins";
@@ -32,6 +42,10 @@ namespace ValheimPatcher
             Directory.CreateDirectory("temp\\plugins");
         }
 
+        /// <summary>
+        /// Install all mods from manifest
+        /// </summary>
+        /// <param name="onComplete">action to perform when all mod installs are complete</param>
         public void installAll(Action onComplete)
         {
             onDoneInstall = onComplete;
@@ -44,10 +58,14 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Download mod from appropriate source
+        /// </summary>
+        /// <param name="mod">mod/plugin to download</param>
         private void download(ModListItem mod)
         {
             MainWindow.log("Downloading " + mod.name);
-            if (nexusApiKey != "" && (mod.downloadUrl.Trim() != "" || useNexus))
+            if (nexusApiKey != "" && (mod.downloadUrl.Trim() != "" || useNexus) && mod.nexusId >= 0)
             {
                 new NexusDownloader(nexusApiKey).download(mod, install);
             }
@@ -71,6 +89,10 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Extracts and installs a plugin
+        /// </summary>
+        /// <param name="mod">mod/plugin to install</param>
         private void install(ModListItem mod)
         {
             string tempLocation = "temp\\" + mod.name + ".zip";
@@ -114,6 +136,10 @@ namespace ValheimPatcher
             installComplete();
         }
 
+        /// <summary>
+        /// Called when a mod completes installation, tracks how many are completed and
+        /// performs the onDoneInstall action when all plugin installs are complete
+        /// </summary>
         private void installComplete()
         {
             completed++;
@@ -125,11 +151,21 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Accessor for missing mods list
+        /// </summary>
+        /// <returns>list of mods marked missing</returns>
         public List<ModListItem> getMissing()
         {
             return missing;
         }
 
+        /// <summary>
+        /// Download file
+        /// </summary>
+        /// <param name="mod">Mod to download</param>
+        /// <param name="saveAs">local file name</param>
+        /// <param name="onComplete">action to take when complete</param>
         static void download(ModListItem mod, string saveAs, Action<ModListItem> onComplete)
         {
             WebClient client = new();

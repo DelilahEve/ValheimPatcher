@@ -7,21 +7,32 @@ namespace ValheimPatcher
 {
     class ConfigPatcher
     {
-
+        // Class parameters
         private string installFolder;
         private string downloadUrl;
 
+        /// <summary>
+        /// Setup config patcher
+        /// </summary>
+        /// <param name="folder"></param>
+        /// <param name="url"></param>
         public ConfigPatcher(string folder, string url)
         {
             installFolder = folder;
             downloadUrl = url;
         }
 
+        /// <summary>
+        /// Attempt to install configs
+        /// </summary>
         public void tryInstall()
         {
             download();
         }
 
+        /// <summary>
+        /// Download config files
+        /// </summary>
         private void download() 
         {
             try
@@ -37,6 +48,9 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Install config files
+        /// </summary>
         private void install()
         {
             try

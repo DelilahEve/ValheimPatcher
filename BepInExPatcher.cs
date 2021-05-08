@@ -8,10 +8,15 @@ namespace ValheimPatcher
 {
     class BepInExPatcher
     {
-
+        // Class parameters
         private string installFolder;
         private string downloadUrl;
 
+        /// <summary>
+        /// Setup patcher
+        /// </summary>
+        /// <param name="folder">Valheim install folder</param>
+        /// <param name="url">manifest's BepInEx download url</param>
         public BepInExPatcher(string folder, string url)
         {
             installFolder = folder;
@@ -22,11 +27,19 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Try to patch game files with BepInEx
+        /// </summary>
+        /// <param name="onReady">Action to perform when install is complete</param>
         public void tryPatch(Action onReady) 
         {
             download(onReady);
         }
 
+        /// <summary>
+        /// Download BepInEx from manifest's url
+        /// </summary>
+        /// <param name="onReady">Action to perform when install is complete</param>
         private void download(Action onReady)
         {
             try
@@ -42,6 +55,10 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Install BepInEx
+        /// </summary>
+        /// <param name="onReady">Action to perform when install is complete</param>
         private void install(Action onReady)
         {
             try

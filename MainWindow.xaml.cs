@@ -15,21 +15,31 @@ namespace ValheimPatcher
 {
     public partial class MainWindow : Window
     {
-
+        
+        // Url to generate Nexus api key
         string getNexusApiKeyUrl = "https://www.nexusmods.com/users/myaccount?tab=api";
+        // Nexus mod page url - append id to use
         string nexusBaseUrl = "https://www.nexusmods.com/valheim/mods/";
+        // Darkheim modpack manifest
         string defaultManifest = "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest.json";
 
+        // Manifest location
         PatcherConfig config;
+        // Manifest data
         ModManifest manifest;
+        // Plugin installer instance
         PluginInstaller installer;
 
+        // Window instance
         static MainWindow instance;
 
+        /// <summary>
+        /// Setup patcher
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
-            instance = this;
+            instance = this;  // used to access log output textbox
             btnPatch.IsEnabled = false;
             readConfig();
             btnPickFolder.Click += pickFolderClick;
@@ -37,11 +47,9 @@ namespace ValheimPatcher
             btnGetKey.Click += getApiKeyClick;
         }
 
-        private void getApiKeyClick(object sender, RoutedEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo { FileName = getNexusApiKeyUrl, UseShellExecute = true });
-        }
-
+        /// <summary>
+        /// Attempt to read config.json from current directory, with fallback of defaultManifest
+        /// </summary>
         private void readConfig()
         {
             try
@@ -67,6 +75,80 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Filter to mods with a blank downloadUrl
+        /// </summary>
+        /// <param name="input">original mod list</param>
+        /// <returns>filtered mod list</returns>
+        ModListItem[] filterNoDownload(ModListItem[] input)
+        {
+            return input.Where(m => m.downloadUrl == "").ToArray();
+        }
+
+        /// <summary>
+        /// Begin patching
+        /// </summary>
+        private void patch()
+        {
+            btnPickFolder.IsEnabled = false;
+            btnPatch.IsEnabled = false;
+            string folder = tbValheimFolder.Text;
+            BepInExPatcher patcher = new(folder, manifest.BepInExUrl);
+            patcher.tryPatch(bepInExPatchComplete);
+        }
+
+        /// <summary>
+        /// BepInEx patch complete; install plugins
+        /// </summary>
+        private void bepInExPatchComplete()
+        {
+            string folder = tbValheimFolder.Text;
+            installer = new(folder, manifest.mods, tbNexusApiKey.Text, cbUseNexus.IsChecked == true); // IsChecked can be null?? wtf MS
+            installer.installAll(pluginPatchComplete);
+        }
+
+        /// <summary>
+        /// Plugins installed, patch in config files and cleanup
+        /// </summary>
+        private void pluginPatchComplete()
+        {
+            string folder = tbValheimFolder.Text;
+            ConfigPatcher configPatcher = new(folder, manifest.configFilesUrl);
+            configPatcher.tryInstall();
+            List<ModListItem> list = installer.getMissing();
+            log("\nFailed to download plugins:");
+            foreach (ModListItem mod in list)
+            {
+                log(mod.name + " - " + nexusBaseUrl + mod.nexusId.ToString());
+            }
+            log("\n");
+            log("Patching complete");
+            log("Cleaning up temporary files");
+            cleanup();
+        }
+
+        /// <summary>
+        /// Show pick folder dialog for Valheim folder
+        /// </summary>
+        /// <param name="sender">button</param>
+        /// <param name="e">event args</param>
+        private void pickFolderClick(object sender, RoutedEventArgs e)
+        {
+            CommonOpenFileDialog dialog = new();
+            dialog.InitialDirectory = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Valheim";
+            dialog.IsFolderPicker = true;
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                tbValheimFolder.Text = dialog.FileName;
+                btnPatch.IsEnabled = tbValheimFolder.Text != "";
+            }
+        }
+
+        /// <summary>
+        /// Attempt to patch
+        /// </summary>
+        /// <param name="sender">button</param>
+        /// <param name="e">event args</param>
         private void patchClick(object sender, RoutedEventArgs e)
         {
             ModListItem[] missingDl = filterNoDownload(manifest.mods);
@@ -88,55 +170,19 @@ namespace ValheimPatcher
             }
         }
 
-        ModListItem[] filterNoDownload(ModListItem[] input)
+        /// <summary>
+        /// Open link to generating Nexus api key
+        /// </summary>
+        /// <param name="sender">button</param>
+        /// <param name="e">event args</param>
+        private void getApiKeyClick(object sender, RoutedEventArgs e)
         {
-            return input.Where(m => m.downloadUrl == "").ToArray();
+            Process.Start(new ProcessStartInfo { FileName = getNexusApiKeyUrl, UseShellExecute = true });
         }
 
-        private void patch()
-        {
-            btnPickFolder.IsEnabled = false;
-            btnPatch.IsEnabled = false;
-            string folder = tbValheimFolder.Text;
-            BepInExPatcher patcher = new(folder, manifest.BepInExUrl);
-            patcher.tryPatch(bepInExPatchComplete);
-        }
-
-        private void bepInExPatchComplete()
-        {
-            string folder = tbValheimFolder.Text;
-            installer = new(folder, manifest.mods, tbNexusApiKey.Text, cbUseNexus.IsChecked == true); // IsChecked can be null?? wtf MS
-            installer.installAll(pluginPatchComplete);
-            ConfigPatcher configPatcher = new(folder, manifest.configFilesUrl);
-            configPatcher.tryInstall();
-        }
-
-        private void pluginPatchComplete()
-        {
-            List<ModListItem> list = installer.getMissing();
-            log("\nFailed to download plugins:");
-            foreach (ModListItem mod in list)
-            {
-                log(mod.name + " - " + nexusBaseUrl + mod.nexusId.ToString());
-            }
-            log("\n");
-            log("Patching complete");
-            log("Cleaning up temporary files");
-            cleanup();
-        }
-
-        private void pickFolderClick(object sender, RoutedEventArgs e)
-        {
-            CommonOpenFileDialog dialog = new();
-            dialog.InitialDirectory = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Valheim";
-            dialog.IsFolderPicker = true;
-            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                tbValheimFolder.Text = dialog.FileName;
-                btnPatch.IsEnabled = tbValheimFolder.Text != "";
-            }
-        }
-
+        /// <summary>
+        /// Download manifest
+        /// </summary>
         private void loadManifest()
         {
             Directory.CreateDirectory("temp");
@@ -152,6 +198,9 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Manifest downloaded, read contents
+        /// </summary>
         private void readManifest()
         {
             try
@@ -169,11 +218,20 @@ namespace ValheimPatcher
 
         }
 
+        /// <summary>
+        /// Cleanup leftover files
+        /// </summary>
         private void cleanup()
         {
             FileSystem.DeleteDirectory("temp", DeleteDirectoryOption.DeleteAllContents);
         }
 
+        /// <summary>
+        /// Download a file
+        /// </summary>
+        /// <param name="url">remote file location</param>
+        /// <param name="saveAs">local file name</param>
+        /// <param name="onComplete">action to perform when done</param>
         private void download(string url, string saveAs, Action onComplete)
         {
             WebClient client = new();
@@ -181,36 +239,28 @@ namespace ValheimPatcher
             client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { onComplete(); };
         }
 
+        /// <summary>
+        /// Log some text to the log textbox
+        /// </summary>
+        /// <param name="text">text to log</param>
         public static void log(string text)
         {
             instance.tbLogOutput.Text += text + "\n";
             instance.tbLogOutput.ScrollToEnd();
         }
 
+        /// <summary>
+        /// Open a json file
+        /// </summary>
+        /// <typeparam name="T">Type to parse the json string to</typeparam>
+        /// <param name="file">File path to open</param>
+        /// <returns></returns>
         public static Object openJson<T>(string file)
         {
             using (StreamReader r = new(file))
             {
                 string json = r.ReadToEnd();
                 return JsonConvert.DeserializeObject<T>(json);
-            }
-        }
-
-        public void getConfig()
-        {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string[] resources = assembly.GetManifestResourceNames();
-            foreach(string r in resources)
-            {
-                log("found: " + r);
-            }
-            string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("config.json"));
-            log("loading config: " + resourceName);
-            using (Stream s = assembly.GetManifestResourceStream(resourceName))
-            using (StreamReader r = new(s))
-            {
-                string json = r.ReadToEnd();
-                config = JsonConvert.DeserializeObject<PatcherConfig>(json);
             }
         }
 

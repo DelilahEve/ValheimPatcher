@@ -9,17 +9,29 @@ namespace ValheimPatcher
 {
     class NexusDownloader
     {
-
+        // NexusClient instance for interacting with Nexus api
         static NexusClient client;
+        static string usedKey = "";
 
+        /// <summary>
+        /// Initialize NexusClient if not already present
+        /// </summary>
+        /// 
+        /// <param name="apiKey">api key to use</param>
         public NexusDownloader(string apiKey)
         {
-            if (client == null)
+            if (client == null || apiKey != usedKey)
             {
+                usedKey = apiKey;
                 client = new NexusClient(apiKey, "ValheimPatcher", "1.0");
             }
         }
 
+        /// <summary>
+        /// Attempt to download mod from Nexus mods
+        /// </summary>
+        /// <param name="mod">mod to download</param>
+        /// <param name="onComplete">action to take when done</param>
         public async void download(ModListItem mod, Action<ModListItem> onComplete)
         {
             try
@@ -43,6 +55,12 @@ namespace ValheimPatcher
             }
         }
 
+        /// <summary>
+        /// Download file
+        /// </summary>
+        /// <param name="url">remote file location</param>
+        /// <param name="mod">local file name</param>
+        /// <param name="onComplete">action to take when complete</param>
         static void download(string url, ModListItem mod, Action<ModListItem> onComplete)
         {
             string saveAs = "temp\\" + mod.name + ".zip";

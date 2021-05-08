@@ -39,7 +39,7 @@ Key | Type | Purpose
 `nexusId` | `integer` | Nexus mod id
 `zipStructure` | `string` | __Relative path__ for `.dll` files inside mod `.zip` file (leave blank if no folders)
 
-*Some mods are only distributed via [Nexus mods](https://www.nexusmods.com/) though most are available through [Thunderstore](https://valheim.thunderstore.io/). It's recommended to have both the `downloadUrl` and `nexusId` in the manifest, as the patcher offers the choice to prefer Nexus.
+*Some mods are only distributed via [Nexus mods](https://www.nexusmods.com/) though most are available through [Thunderstore](https://valheim.thunderstore.io/). It's recommended include both `downloadUrl` and `nexusId`, as the patcher offers the choice to prefer Nexus.
 
 ###### A minimum example of a manifest:
 ```json

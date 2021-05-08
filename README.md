@@ -13,7 +13,7 @@ Made with love for the Valheim community ♥
 Add a `config.json` file to the same folder as the executable with:
 ```json
 {
-    "manifest": "https://some-manifest.url/manifest.json"
+    "manifestUrl": "https://some-manifest.url/manifest.json"
 }
 ```
 where `https://some-manifest.url/manifest.json` points to a publicly accessible 

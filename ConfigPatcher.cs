@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.FileIO;
+using System;
 using System.ComponentModel;
 using System.IO.Compression;
 using System.Net;
@@ -7,60 +8,49 @@ namespace ValheimPatcher
 {
     class ConfigPatcher
     {
-        // Class parameters
-        private string installFolder;
-        private string downloadUrl;
-
-        /// <summary>
-        /// Setup config patcher
-        /// </summary>
-        /// <param name="folder"></param>
-        /// <param name="url"></param>
-        public ConfigPatcher(string folder, string url)
-        {
-            installFolder = folder;
-            downloadUrl = url;
-        }
-
         /// <summary>
         /// Attempt to install configs
         /// </summary>
-        public void tryInstall()
+        /// <param name="onComplete">Action to take when done</param>
+        public void tryInstall(Action onComplete)
         {
-            download();
+            download(onComplete);
         }
 
         /// <summary>
         /// Download config files
         /// </summary>
-        private void download() 
+        private void download(Action onComplete) 
         {
             try
             {
-                MainWindow.log("Downloading configs...");
+                Session.log("Downloading configs...");
                 WebClient client = new();
-                client.DownloadFileAsync(new Uri(downloadUrl), "temp\\configs.zip");
-                client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { install(); };
+                client.DownloadFileAsync(new Uri(Session.manifest.configFilesUrl), "temp\\configs.zip");
+                client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { install(onComplete); };
             }
              catch (Exception e)
             {
-                MainWindow.log("Config files failed to download: " + e.GetType().Name);
+                Session.log("Config files failed to download: " + e.GetType().Name);
             }
         }
 
         /// <summary>
         /// Install config files
         /// </summary>
-        private void install()
+        private void install(Action onComplete)
         {
             try
             {
-                MainWindow.log("Installing configs...");
-                ZipFile.ExtractToDirectory("temp\\configs.zip", installFolder + "\\BepInEx", true);
+                Session.log("Installing configs...");
+                ZipFile.ExtractToDirectory("temp\\configs.zip", "temp\\cfg", true);
+                FileSystem.MoveDirectory("temp\\cfg\\plugins", Session.valheimFolder + "\\BepInEx\\plugins", true);
+                FileSystem.MoveDirectory("temp\\cfg\\config", Session.valheimFolder + "\\BepInEx\\config", true);
+                onComplete();
             } 
             catch (Exception e)
             {
-                MainWindow.log("Config files failed to install: " + e.GetType().Name);
+                Session.log("Config files failed to install: " + e.GetType().Name);
             }
         }
 

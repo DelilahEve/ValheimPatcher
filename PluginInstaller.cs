@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualBasic.FileIO;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,11 +11,8 @@ namespace ValheimPatcher
 {
     class PluginInstaller
     {
-        // Class parameters
-        private string installFolder;
+        // Mods to install
         private ModListItem[] mods;
-        private string nexusApiKey;
-        private bool useNexus;
 
         // Tracking for mod installs
         private int awaiting;  // number to be processed
@@ -30,15 +28,9 @@ namespace ValheimPatcher
         /// Setup plugin installer
         /// </summary>
         /// <param name="folder">Valheim install folder</param>
-        /// <param name="mods">list of mods to install</param>
-        /// <param name="nexusApiKey">Nexus API key</param>
-        /// <param name="useNexus">Whether to prefer Nexus API over manifest downloadUrl</param>
-        public PluginInstaller(string folder, ModListItem[] mods, string nexusApiKey, bool useNexus)
+        public PluginInstaller()
         {
-            installFolder = folder + "\\BepInEx\\plugins";
-            this.mods = mods;
-            this.nexusApiKey = nexusApiKey;
-            this.useNexus = useNexus;
+            this.mods = Session.resolver.getResolvedMods();
             Directory.CreateDirectory("temp\\plugins");
         }
 
@@ -49,13 +41,9 @@ namespace ValheimPatcher
         public void installAll(Action onComplete)
         {
             onDoneInstall = onComplete;
-            awaiting = 0;
+            awaiting = mods.Length;
             completed = 0;
-            foreach (ModListItem mod in mods)
-            {
-                download(mod);
-                awaiting++;
-            }
+            foreach (ModListItem mod in mods) download(mod);
         }
 
         /// <summary>
@@ -64,12 +52,8 @@ namespace ValheimPatcher
         /// <param name="mod">mod/plugin to download</param>
         private void download(ModListItem mod)
         {
-            MainWindow.log("Downloading " + mod.name);
-            if (nexusApiKey != "" && (mod.downloadUrl.Trim() != "" || useNexus) && mod.nexusId >= 0)
-            {
-                new NexusDownloader(nexusApiKey).download(mod, install);
-            }
-            else if (mod.downloadUrl.Trim() == "")
+            Session.log("Downloading " + mod.name);
+            if (mod.downloadUrl != null && mod.downloadUrl.Trim() == "")
             {
                 missing.Add(mod);
                 installComplete();
@@ -83,7 +67,7 @@ namespace ValheimPatcher
                 }
                 catch (Exception e)
                 {
-                    MainWindow.log(mod.name + " failed to download: " + e.GetType().Name);
+                    Session.log(mod.name + " failed to download: " + e.GetType().Name);
                     installComplete();
                 }
             }
@@ -97,7 +81,7 @@ namespace ValheimPatcher
         {
             string tempLocation = "temp\\" + mod.name + ".zip";
             string extractTo = "temp\\plugins";
-            MainWindow.log("Installing" + mod.name);
+            Session.log("Installing " + mod.name);
             try
             {
                 if (mod.makeFolder)
@@ -106,7 +90,7 @@ namespace ValheimPatcher
                     Directory.CreateDirectory(extractTo);
                 }
                 ZipFile.ExtractToDirectory(tempLocation, extractTo, true);
-                if (mod.zipStructure.Trim() != "")
+                if (mod.zipStructure != null && mod.zipStructure.Trim() != "")
                 {
                     string folder = extractTo + "\\" + mod.zipStructure;
                     string[] files = Directory.GetFiles(folder);
@@ -131,7 +115,7 @@ namespace ValheimPatcher
             }
             catch (Exception e)
             {
-                MainWindow.log(mod.name + " failed to extract: " + e.GetType().Name);
+                Session.log(mod.name + " failed to extract: " + e.GetType().Name);
             }
             installComplete();
         }
@@ -145,8 +129,8 @@ namespace ValheimPatcher
             completed++;
             if (completed == awaiting)
             {
-                FileSystem.MoveDirectory("temp\\plugins", installFolder, true);
-                MainWindow.log("Plugins installed");
+                FileSystem.MoveDirectory("temp\\plugins", Session.valheimFolder + "\\BepInEx\\plugins", true);
+                Session.log("Plugins installed");
                 onDoneInstall();
             }
         }

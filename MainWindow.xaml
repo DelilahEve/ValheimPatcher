@@ -6,21 +6,21 @@
         xmlns:local="clr-namespace:ValheimPatcher"
         mc:Ignorable="d"
         ResizeMode="NoResize"
-        Title="Valheim Patcher" 
+        Title="Darkheim Launcher" 
         Height="950" 
         Width="550">
     <Grid>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="2*" />
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
             <RowDefinition Height="5*"/>
-            <RowDefinition Height="2*"/>
+            <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
 
         <Image
             Grid.Row="0"
-            Margin="2"
+            Margin="6"
             Source="Images/darkheim.png"/>
 
         <Grid
@@ -28,9 +28,6 @@
             Grid.Row="1">
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -67,40 +64,6 @@
                 VerticalAlignment="Top"
                 Content="Pick Folder"/>
 
-            <CheckBox
-                x:Name="cbUseNexus"
-                Grid.Row="2"
-                Content="Prefer Nexus download (this will require you to enter an API key)"
-                VerticalAlignment="Center" />
-
-            <Label
-                x:Name="lbNexusKey"
-                Grid.Row="3"
-                VerticalAlignment="Bottom"
-                Content="Nexus API key" />
-
-            <Grid
-                Grid.Row="4">
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <TextBox
-                    x:Name="tbNexusApiKey"
-                    VerticalAlignment="Center"
-                    Grid.Column="0" />
-
-                <Button
-                    x:Name="btnGetKey"
-                    Grid.Column="1"
-                    Content="Get API key"
-                    Padding="12,3"
-                    Margin="12,0,0,0"/>
-
-            </Grid>
-
         </Grid>
 
         <Grid
@@ -129,7 +92,7 @@
             Grid.Row="3">
 
             <Grid.RowDefinitions>
-                <RowDefinition />
+                <RowDefinition Height="Auto" />
                 <RowDefinition />
             </Grid.RowDefinitions>
 
@@ -142,10 +105,20 @@
                 </Grid.ColumnDefinitions>
 
                 <Button
+                    x:Name="btnDisable"
+                    Grid.Column="0"
+                    Margin="12"
+                    Padding="16"
+                    Content="Wipe plugins/configs"
+                    VerticalAlignment="Center"/>
+
+                <Button
                     x:Name="btnPatch"
                     Grid.Column="1"
                     Margin="12"
-                    Content="Patch" />
+                    Padding="16"
+                    Content="Install"
+                    VerticalAlignment="Center"/>
 
             </Grid>
 

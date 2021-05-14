@@ -13,8 +13,7 @@ namespace ValheimPatcher
         string defaultManifest = "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest_v1.1.0.json";
 
         // Default install location for Valheim
-        //string defaultSteamInstall = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Valheim";
-        string defaultSteamInstall = "D:\\Dummyheim";
+        string defaultSteamInstall = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Valheim";
 
         /// <summary>
         /// Setup patcher

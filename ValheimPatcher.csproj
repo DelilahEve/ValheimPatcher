@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <None Remove="Images\darkheim.png" />
+    <None Remove="Images\ovd-valheim-crow.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,6 +21,7 @@
 
   <ItemGroup>
     <Resource Include="Images\darkheim.png" />
+    <Resource Include="Images\ovd-valheim-crow.png" />
   </ItemGroup>
 
 </Project>

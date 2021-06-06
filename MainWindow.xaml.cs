@@ -4,13 +4,23 @@ using System;
 using System.IO;
 using System.Net;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace ValheimPatcher
 {
     public partial class MainWindow : Window
     {
-        // Darkheim modpack manifest
-        string defaultManifest = "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest_v1.1.0.json";
+        // Default manifest options
+        string[] manifestLabels = new string[]
+        {
+            "Darkheim MP",
+            "Darkheim"
+        };
+        string[] manifestOptions = new string[] 
+        {
+            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/DarkheimMP/manifest.json",
+            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest_v1.1.0.json"
+        };
 
         // Default install location for Valheim
         string defaultSteamInstall = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Valheim";
@@ -51,8 +61,14 @@ namespace ValheimPatcher
             } 
             catch (Exception _)
             {
-                Session.config = new PatcherConfig();
-                Session.config.manifestUrl = defaultManifest;
+                Session.config = new();
+                Session.config.manifestUrl = manifestOptions[0];
+                Session.config.manifestOptions = manifestOptions;
+                cbConfigChoice.Visibility = Visibility.Visible;
+                cbConfigChoice.Items.Add("Darkheim MP");
+                cbConfigChoice.Items.Add("Darkheim");
+                cbConfigChoice.SelectedIndex = 0;
+                cbConfigChoice.SelectionChanged += cbConfigChoiceChanged;
             }
             Session.log("Config loaded");
             Session.log("Reading config file...");
@@ -63,9 +79,41 @@ namespace ValheimPatcher
             }
             else
             {
-                Session.log("Using manifest: " + Session.config.manifestUrl);
+                Session.log("Using manifest: " + cbConfigChoice.SelectedItem);
                 loadManifest();
             }
+        }
+
+        /// <summary>
+        /// Handle manifest choice changed
+        /// </summary>
+        /// 
+        /// <param name="sender">combo box</param>
+        /// <param name="e">event args</param>
+        private void cbConfigChoiceChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox)
+            {
+                ComboBox options = sender as ComboBox;
+                int selection = options.SelectedIndex;
+                string newUrl = manifestOptions[selection];
+                if (Session.config.manifestUrl != newUrl)
+                {
+                    Session.config.manifestUrl = newUrl;
+                    Session.log("Manifest url changed, now using " + manifestLabels[selection] + "; It's recommended to wipe configs/plugins before installing to avoid errors");
+                    Session.log("\n");
+                    loadManifest();
+                }
+            }
+        }
+
+        private int findLabelIndex(string label)
+        {
+            for (int i = 0; i < manifestLabels.Length; i++)
+            {
+                if (manifestLabels[i] == label) return i;
+            }
+            return 0;
         }
 
         /// <summary>
@@ -111,6 +159,7 @@ namespace ValheimPatcher
                 Session.manifest = JsonConvert.DeserializeObject<ModManifest>(json);
                 Session.log(Session.manifest.mods.Length.ToString() + " mods in manifest");
                 Session.log("Ready to patch");
+                Session.log("\n");
             }
             catch (Exception e)
             {

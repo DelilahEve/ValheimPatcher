@@ -8,20 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Images\darkheim.png" />
-    <None Remove="Images\ovd-valheim-crow.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Pathoschild.FluentNexus" Version="1.0.2" />
     <PackageReference Include="WindowsAPICodePack-Core" Version="1.1.2" />
     <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Images\darkheim.png" />
-    <Resource Include="Images\ovd-valheim-crow.png" />
   </ItemGroup>
 
 </Project>

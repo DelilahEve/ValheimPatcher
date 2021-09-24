@@ -32,7 +32,7 @@ namespace ValheimPatcher
         public void resolveAll(Action onComplete)
         {
             this.onComplete = onComplete;
-            needResolving = Session.manifest.mods.Length;
+            needResolving = Session.manifest.mods.Count;
             foreach (ModListItem mod in Session.manifest.mods)
             {
                 fetchPluginInfo(mod);
@@ -56,7 +56,7 @@ namespace ValheimPatcher
                 {
                     string json = e.Result;
                     ThunderstorePlugin plugin = JsonConvert.DeserializeObject<ThunderstorePlugin>(json);
-                    onComplete(plugin.latest.download_url);
+                    onComplete(plugin.latest.downloadUrl);
                 };
             }
             catch(Exception e)
@@ -100,12 +100,14 @@ namespace ValheimPatcher
                         catch (TargetInvocationException ex)
                         {
                             Session.log("Failed to resolve mod: " + mod.package + "/" + mod.name);
+                            onResolved(mod);
                         }
                     };
                 }
                 catch (Exception e)
                 {
                     Session.log("Error fetching plugin info: " + mod.name + ": " + e.GetType().Name);
+                    onResolved(mod);
                 }
             }
         }
@@ -120,7 +122,7 @@ namespace ValheimPatcher
             // Parse api response
             ThunderstorePlugin plugin = JsonConvert.DeserializeObject<ThunderstorePlugin>(json);
             // check url not empty before saving it
-            string url = plugin.latest.download_url;
+            string url = plugin.latest.downloadUrl;
             if (url.Trim() != "") mod.downloadUrl = url;
             string[] dependencies = plugin.latest.dependencies;
             if (dependencies.Length > 0)
@@ -147,8 +149,11 @@ namespace ValheimPatcher
             resolvedCount++;
             if (mod != null)
             {
-                resolved.Add(mod);
-                if (mod.downloadUrl != null && mod.downloadUrl.Trim() != "") Session.log("Resolved " + mod.name);
+                if (mod.downloadUrl != null && mod.downloadUrl.Trim() != "")
+                {
+                    resolved.Add(mod);
+                    Session.log("Resolved " + mod.name);
+                }
             }
             if (resolvedCount == needResolving)
             {

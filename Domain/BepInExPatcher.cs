@@ -9,6 +9,9 @@ namespace ValheimPatcher
 {
     class BepInExPatcher
     {
+        private static string package = "denikson";
+        private static string name = "BepInExPack_Valheim";
+
         // Class parameters
         private string downloadUrl;
 
@@ -30,8 +33,7 @@ namespace ValheimPatcher
         /// <param name="onReady">Action to perform when install is complete</param>
         public void tryPatch(Action onReady)
         {
-            BepInExMeta meta = Session.manifest.BepInEx;
-            PluginResolver.resolveSingle(meta.package, meta.name, delegate (string url) { 
+            PluginResolver.resolveSingle(package, name, delegate (string url) { 
                 this.downloadUrl = url;
                 download(onReady);
             });

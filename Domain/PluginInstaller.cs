@@ -1,11 +1,11 @@
 ﻿using Microsoft.VisualBasic.FileIO;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using ValheimPatcher.Models;
 
 namespace ValheimPatcher
 {
@@ -79,45 +79,97 @@ namespace ValheimPatcher
         /// <param name="mod">mod/plugin to install</param>
         private void install(ModListItem mod)
         {
-            string tempLocation = "temp\\" + mod.name + ".zip";
-            string extractTo = "temp\\plugins";
+            string zipLocation = "temp\\" + mod.name + ".zip";
+            string extractTo = "temp\\plugin_staging";
+            string tempDest = "temp\\plugins";
+            string finalDest = "\\BepInEx\\plugins";
+            if (!Directory.Exists(extractTo))
+            {
+                Directory.CreateDirectory(extractTo);
+            }
             Session.log("Installing " + mod.name);
             try
             {
-                if (mod.makeFolder)
-                {
-                    extractTo = extractTo + "\\" + mod.name;
-                    Directory.CreateDirectory(extractTo);
-                }
-                ZipFile.ExtractToDirectory(tempLocation, extractTo, true);
-                if (mod.zipStructure != null && mod.zipStructure.Trim() != "")
-                {
-                    string folder = extractTo + "\\" + mod.zipStructure;
-                    string[] files = Directory.GetFiles(folder);
-                    foreach(string file in files)
-                    {
-                        string fileName = Path.GetFileName(file);
-                        File.Move(file, extractTo + "\\" + fileName, true);
-                    }
-                    if (mod.makeFolder)
-                    {
-                        string[] removeDirectories = Directory.GetDirectories(extractTo);
-                        foreach (string directory in removeDirectories)
-                        {
-                            FileSystem.DeleteDirectory(directory, DeleteDirectoryOption.DeleteAllContents);
-                        }
-                    }
-                    else
-                    {
-                        FileSystem.DeleteDirectory(folder, DeleteDirectoryOption.DeleteAllContents);
-                    }
-                }
+                ZipFile.ExtractToDirectory(zipLocation, extractTo, true);
+                moveModFiles(mod, tempDest, finalDest, extractTo, false);
+                FileSystem.DeleteDirectory(extractTo, DeleteDirectoryOption.DeleteAllContents);
             }
             catch (Exception e)
             {
                 Session.log(mod.name + " failed to extract: " + e.GetType().Name);
             }
             installComplete();
+        }
+
+        private void moveModFiles(ModListItem mod, string destination, string finalDestination, string source, bool folderAdded)
+        {
+            // Ensure directory
+            if (!Directory.Exists(destination))
+            {
+                Directory.CreateDirectory(destination);
+            }
+            // Basic plugin files that are not needed for running the mods
+            List<string> ignoreFiles = new();
+            ignoreFiles.Add("icon.png");
+            ignoreFiles.Add("readme.md");
+            ignoreFiles.Add("manifest.json");
+
+            // Get files to move
+            string[] files = Directory.GetFiles(source);
+            List<string> fileList = new();
+            fileList.AddRange(files);
+            // Remove files that should be ignored from list
+            fileList.RemoveAll((item) => ignoreFiles.Contains(item.ToLower()));
+            // Move mod files
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileName(file);
+                if (!ignoreFiles.Contains(fileName.ToLower()))
+                {
+                    LocalPluginMeta meta = Session.pluginManifest.findMeta(mod.name);
+                    string metaPath = finalDestination + "\\" + fileName;
+                    if (meta != null)
+                    {
+                        if (!meta.files.Contains(metaPath)) meta.files.Add(metaPath);
+                    }
+                    else
+                    {
+                        meta = new();
+                        meta.modName = mod.name;
+                        meta.modPackage = mod.package;
+                        meta.files = new();
+                        meta.files.Add(metaPath);
+                        if (!Session.pluginManifest.meta.Contains(meta))
+                        {
+                            Session.pluginManifest.meta.Add(meta);
+                        }
+                    }
+                    // Move zip file into staging directory
+                    File.Move(file, destination + "\\" + fileName, true);
+                    // Check for existing version of file and take it instead if present
+                    string existingFile = Session.valheimFolder + metaPath;
+                    string fileExt = Path.GetExtension(fileName);
+                    if (fileExt != ".dll" && File.Exists(existingFile))
+                    {
+                        File.Copy(existingFile, destination + "\\" + fileName, true);
+                    }
+                }
+            }
+
+            // Check for child directories
+            string[] folders = Directory.GetDirectories(source);
+            foreach (string folder in folders)
+            {
+                string newDestination = destination;
+                string newFinalDestination = finalDestination;
+                if (!folderAdded)
+                {
+                    newDestination += ("\\" + mod.name);
+                    newFinalDestination += ("\\" + mod.name);
+                }
+
+                moveModFiles(mod, newDestination, newFinalDestination, folder, true);
+            }
         }
 
         /// <summary>

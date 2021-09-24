@@ -24,10 +24,18 @@ namespace ValheimPatcher
         {
             try
             {
-                Session.log("Downloading configs...");
-                WebClient client = new();
-                client.DownloadFileAsync(new Uri(Session.manifest.configFilesUrl), "temp\\configs.zip");
-                client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { install(onComplete); };
+                if (Session.manifest.configFilesUrl != null && Session.manifest.configFilesUrl.Trim() != "")
+                {
+                    Session.log("Downloading configs...");
+                    WebClient client = new();
+                    client.DownloadFileAsync(new Uri(Session.manifest.configFilesUrl), "temp\\configs.zip");
+                    client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { install(onComplete); };
+                } 
+                else
+                {
+                    Session.log("No configs url declared");
+                    onComplete();
+                }
             }
              catch (Exception e)
             {

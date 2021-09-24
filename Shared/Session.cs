@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualBasic.FileIO;
 using System.Collections.Generic;
+using ValheimPatcher.Models;
 
 namespace ValheimPatcher
 {
@@ -23,6 +24,8 @@ namespace ValheimPatcher
         public static string valheimFolder;
         // Whether launcher has installed
         public static bool readyToLaunch = false;
+        // Local plugin manifest data
+        public static PluginsManifest pluginManifest;
 
         /// <summary>
         /// Initialise session with main window instance

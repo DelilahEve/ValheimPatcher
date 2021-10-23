@@ -18,13 +18,15 @@ namespace ValheimPatcher
         {
             "Custom",
             "Darkheim MP (Unsupported)",
-            "Darkheim (Unsupported)"
+            "Darkheim (Unsupported)",
+            "Lily's QoL"
         };
         string[] manifestOptions = new string[] 
         {
             "", // Blank string is used for custom manifest, stored in the Valheim folder and kept in sync to manage mods
             "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/DarkheimMP/manifest.json",
-            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest_v1.1.0.json"
+            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest_v1.1.0.json",
+            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/LilysQoL/manifest.json"
         };
 
         // Default install location for Valheim

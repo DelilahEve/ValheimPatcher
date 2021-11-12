@@ -69,6 +69,7 @@ namespace ValheimPatcher
                 {
                     Session.log(mod.name + " failed to download: " + e.GetType().Name);
                     installComplete();
+                    Util.writeErrorFile(e);
                 }
             }
         }
@@ -97,6 +98,7 @@ namespace ValheimPatcher
             catch (Exception e)
             {
                 Session.log(mod.name + " failed to extract: " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
             installComplete();
         }
@@ -123,36 +125,43 @@ namespace ValheimPatcher
             // Move mod files
             foreach (string file in files)
             {
-                string fileName = Path.GetFileName(file);
-                if (!ignoreFiles.Contains(fileName.ToLower()))
+                LocalPluginMeta meta = Session.pluginManifest.findMeta(mod.name);
+                try
                 {
-                    LocalPluginMeta meta = Session.pluginManifest.findMeta(mod.name);
-                    string metaPath = finalDestination + "\\" + fileName;
-                    if (meta != null)
+                    string fileName = Path.GetFileName(file);
+                    if (!ignoreFiles.Contains(fileName.ToLower()))
                     {
-                        if (!meta.files.Contains(metaPath)) meta.files.Add(metaPath);
-                    }
-                    else
-                    {
-                        meta = new();
-                        meta.modName = mod.name;
-                        meta.modPackage = mod.package;
-                        meta.files = new();
-                        meta.files.Add(metaPath);
-                        if (!Session.pluginManifest.meta.Contains(meta))
+                        string metaPath = finalDestination + "\\" + fileName;
+                        if (meta != null)
                         {
-                            Session.pluginManifest.meta.Add(meta);
+                            if (!meta.files.Contains(metaPath)) meta.files.Add(metaPath);
+                        }
+                        else
+                        {
+                            meta = new();
+                            meta.modName = mod.name;
+                            meta.modPackage = mod.package;
+                            meta.files = new();
+                            meta.files.Add(metaPath);
+                            if (!Session.pluginManifest.meta.Contains(meta))
+                            {
+                                Session.pluginManifest.meta.Add(meta);
+                            }
+                        }
+                        // Move zip file into staging directory
+                        File.Move(file, destination + "\\" + fileName, true);
+                        // Check for existing version of file and take it instead if present
+                        string existingFile = Session.valheimFolder + metaPath;
+                        string fileExt = Path.GetExtension(fileName);
+                        if (fileExt != ".dll" && File.Exists(existingFile))
+                        {
+                            File.Copy(existingFile, destination + "\\" + fileName, true);
                         }
                     }
-                    // Move zip file into staging directory
-                    File.Move(file, destination + "\\" + fileName, true);
-                    // Check for existing version of file and take it instead if present
-                    string existingFile = Session.valheimFolder + metaPath;
-                    string fileExt = Path.GetExtension(fileName);
-                    if (fileExt != ".dll" && File.Exists(existingFile))
-                    {
-                        File.Copy(existingFile, destination + "\\" + fileName, true);
-                    }
+                } catch (Exception e)
+                {
+                    Session.log("Error moving mod files for " + meta.modName + ": " + e.GetType().Name);
+                    Util.writeErrorFile(e);
                 }
             }
 

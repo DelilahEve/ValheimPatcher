@@ -145,6 +145,7 @@ namespace ValheimPatcher
             catch (Exception e)
             {
                 Session.log("Error while wiping plugins/config: " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
             onComplete();
         }

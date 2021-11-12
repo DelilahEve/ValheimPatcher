@@ -40,6 +40,7 @@ namespace ValheimPatcher
              catch (Exception e)
             {
                 Session.log("Config files failed to download: " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
         }
 
@@ -59,6 +60,7 @@ namespace ValheimPatcher
             catch (Exception e)
             {
                 Session.log("Config files failed to install: " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
         }
 

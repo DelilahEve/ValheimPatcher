@@ -55,6 +55,7 @@ namespace ValheimPatcher
             catch (Exception e)
             {
                 Session.log("Failed to download BepInEx: " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
         }
 
@@ -75,6 +76,7 @@ namespace ValheimPatcher
             catch (Exception e)
             {
                 Session.log("Failed to install BepInEx: " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
         }
 

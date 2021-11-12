@@ -62,6 +62,8 @@ namespace ValheimPatcher
             catch(Exception e)
             {
                 onComplete("");
+                Session.log("Error occurred resolving " + package + "/" + name + ": " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
         }
 
@@ -107,6 +109,7 @@ namespace ValheimPatcher
                 catch (Exception e)
                 {
                     Session.log("Error fetching plugin info: " + mod.name + ": " + e.GetType().Name);
+                    Util.writeErrorFile(e);
                     onResolved(mod);
                 }
             }
@@ -119,23 +122,31 @@ namespace ValheimPatcher
         private void resolve(ModListItem mod, string json)
         {
             Session.log("Resolving " + mod.name);
-            // Parse api response
-            ThunderstorePlugin plugin = JsonConvert.DeserializeObject<ThunderstorePlugin>(json);
-            // check url not empty before saving it
-            string url = plugin.latest.downloadUrl;
-            if (url.Trim() != "") mod.downloadUrl = url;
-            string[] dependencies = plugin.latest.dependencies;
-            if (dependencies.Length > 0)
+            try
             {
-                // save dependencies for resolving later
-                // saves resources fetching duplicates if multiple mods rely on the same thing
-                foreach (string dependency in dependencies)
+                // Parse api response
+                ThunderstorePlugin plugin = JsonConvert.DeserializeObject<ThunderstorePlugin>(json);
+                // check url not empty before saving it
+                string url = plugin.latest.downloadUrl;
+                if (url.Trim() != "") mod.downloadUrl = url;
+                string[] dependencies = plugin.latest.dependencies;
+                if (dependencies.Length > 0)
                 {
-                    if (!this.dependencies.Contains(dependency) && !dependency.StartsWith("denikson-BepInExPack_Valheim"))
+                    // save dependencies for resolving later
+                    // saves resources fetching duplicates if multiple mods rely on the same thing
+                    foreach (string dependency in dependencies)
                     {
-                        this.dependencies.Add(dependency);
+                        if (!this.dependencies.Contains(dependency) && !dependency.StartsWith("denikson-BepInExPack_Valheim"))
+                        {
+                            this.dependencies.Add(dependency);
+                        }
                     }
                 }
+            } 
+            catch (Exception e)
+            {
+                Session.log("Error resolving plugin info: " + mod.name + ": " + e.GetType().Name);
+                Util.writeErrorFile(e);
             }
             onResolved(mod);
         }
@@ -199,6 +210,7 @@ namespace ValheimPatcher
                     catch (Exception e)
                     {
                         Session.log("Error resolving dependency: " + dependency + ": " + e.GetType().Name);
+                        Util.writeErrorFile(e);
                     }
                 }
             }

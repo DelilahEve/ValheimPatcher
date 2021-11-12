@@ -26,6 +26,8 @@ namespace ValheimPatcher
         public static bool readyToLaunch = false;
         // Local plugin manifest data
         public static PluginsManifest pluginManifest;
+        // Current manifest url
+        public static string manifestUrl = "";
 
         /// <summary>
         /// Initialise session with main window instance

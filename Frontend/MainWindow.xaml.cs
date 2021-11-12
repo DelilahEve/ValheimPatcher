@@ -13,21 +13,15 @@ namespace ValheimPatcher
 {
     public partial class MainWindow : Window
     {
-        // Default manifest options
-        string[] manifestLabels = new string[]
+        // Fallback config options
+        PatcherOption[] fallbackOptions = new PatcherOption[]
         {
-            "Custom",
-            "Darkheim MP (Unsupported)",
-            "Darkheim (Unsupported)",
-            "Lily's QoL"
+            new("Custom", ""),
+            new("Lily's QoL", "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/LilysQoL/manifest.json")
         };
-        string[] manifestOptions = new string[] 
-        {
-            "", // Blank string is used for custom manifest, stored in the Valheim folder and kept in sync to manage mods
-            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/DarkheimMP/manifest.json",
-            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/Darkheim/manifest_v1.1.0.json",
-            "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/LilysQoL/manifest.json"
-        };
+
+        // Default config location
+        string defaultConfig = "https://raw.githubusercontent.com/DelilahEve/ValheimPatcherConfig/main/config.json";
 
         // Default install location for Valheim
         string defaultSteamInstall = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Valheim";
@@ -41,10 +35,14 @@ namespace ValheimPatcher
         {
             InitializeComponent();
             new Session(this);
-            if (Directory.Exists(defaultSteamInstall))
+
+            string userDir = Properties.Settings.Default.ValheimPath;
+            if (userDir == "") userDir = defaultSteamInstall;
+
+            if (Directory.Exists(userDir))
             {
-                tbValheimFolder.Text = defaultSteamInstall;
-                Session.valheimFolder = defaultSteamInstall;
+                tbValheimFolder.Text = userDir;
+                Session.valheimFolder = userDir;
                 btnPatch.IsEnabled = true;
                 btnClearPlugins.IsEnabled = true;
                 btnClearConfig.IsEnabled = true;
@@ -79,25 +77,64 @@ namespace ValheimPatcher
         {
             try
             {
+                // Try to load local config
                 Session.config = Util.openJson<PatcherConfig>("config.json") as PatcherConfig;
+                Session.manifestUrl = Session.config.manifestOptions[0].manifestUrl;
+                isCustomManifest = Session.manifestUrl == "";
+                Session.log("Local config found, using it");
+                applyConfig();
             } 
             catch (Exception _)
             {
-                Session.config = new();
-                Session.config.manifestUrl = manifestOptions[0];
-                Session.config.manifestOptions = manifestOptions;
-                cbConfigChoice.Visibility = Visibility.Visible;
-                foreach (String label in manifestLabels)
+                try
                 {
-                    cbConfigChoice.Items.Add(label);
+                    // Fallback trying to download common config from Github
+                    downloadCommonConfig((config) => { 
+                        Session.config = config;
+                        Session.manifestUrl = Session.config.manifestOptions[0].manifestUrl;
+                        isCustomManifest = Session.manifestUrl == "";
+                        Session.log("Using common config");
+                        applyConfig();
+                    });
+                } 
+                catch (Exception __)
+                {
+                    // Secondary fallback generating config with builtin options
+                    Session.config = new();
+                    Session.config.manifestOptions = fallbackOptions;
+                    Session.manifestUrl = fallbackOptions[0].manifestUrl;
+                    cbConfigChoice.Visibility = Visibility.Visible;
+                    Session.log("Using fallback config");
+                    applyConfig();
                 }
-                cbConfigChoice.SelectedIndex = 0;
-                cbConfigChoice.SelectionChanged += cbConfigChoiceChanged;
             }
+            
+        }
+
+        /// <summary>
+        /// Apply config options that were read
+        /// </summary>
+        private void applyConfig()
+        {
+            foreach (PatcherOption op in Session.config.manifestOptions)
+            {
+                cbConfigChoice.Items.Add(op.name);
+            }
+            cbConfigChoice.SelectedIndex = 0;
+            cbConfigChoice.SelectionChanged += cbConfigChoiceChanged;
             Session.log("Config loaded");
             Session.log("Reading config file...");
             Session.log("Using manifest: " + cbConfigChoice.SelectedItem);
             loadManifest();
+        }
+
+        private void downloadCommonConfig(Action<PatcherConfig> onComplete)
+        {
+            WebClient client = new();
+            client.DownloadStringAsync(new Uri(defaultConfig));
+            client.DownloadStringCompleted += (object sender, DownloadStringCompletedEventArgs e) => {
+                onComplete(JsonConvert.DeserializeObject<PatcherConfig>(e.Result));
+            };
         }
 
         /// <summary>
@@ -114,12 +151,13 @@ namespace ValheimPatcher
                 int selection = options.SelectedIndex;
                 isCustomManifest = selection == 0;
                 btnExportPack.IsEnabled = isCustomManifest;
-                string newUrl = manifestOptions[selection];
-                if (Session.config.manifestUrl != newUrl)
+                PatcherOption option = Session.config.manifestOptions[selection];
+                string newUrl = option.manifestUrl;
+                if (Session.manifestUrl != newUrl)
                 {
-                    Session.config.manifestUrl = newUrl;
-                    string label = manifestLabels[selection];
-                    Session.log("Manifest changed, now using " + manifestLabels[selection]);
+                    Session.manifestUrl = newUrl;
+                    string label = option.name;
+                    Session.log("Manifest changed, now using " + option.name);
                     if (label.Contains("(Unsupported)"))
                     {
                         Session.log("This mod pack is unsupported - functionality has not been verified by the pack creator.");
@@ -142,7 +180,7 @@ namespace ValheimPatcher
                 if (!isCustomManifest)
                 {
                     Session.log("Downloading manifest...");
-                    downloadManifest(Session.config.manifestUrl, readManifest);
+                    downloadManifest(Session.manifestUrl, readManifest);
                 }
                 else
                 {
@@ -257,21 +295,46 @@ namespace ValheimPatcher
             if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 string folder = dialog.FileName;
-                tbValheimFolder.Text = folder;
-                Session.valheimFolder = folder;
-                bool haveFolder = tbValheimFolder.Text != "";
-                btnPatch.IsEnabled = haveFolder;
-                btnClearPlugins.IsEnabled = haveFolder;
-                btnClearConfig.IsEnabled = haveFolder;
-                btnManageMods.IsEnabled = haveFolder;
-                btnExportPack.IsEnabled = haveFolder && isCustomManifest;
-                btnImportPack.IsEnabled = haveFolder;
-                if (isCustomManifest)
+                if (!folder.Contains("steamapps\\common\\Valheim") || !folder.EndsWith("Valheim"))
                 {
-                    loadManifest();
-                    readPluginsManifest();
-                    needRePatch();
+                    MessageBoxResult result = MessageBox.Show(
+                        "The folder you picked doesn't look like Valheim's steam folder, are you sure you want to use this folder?\n\n Valheim's Steam folder should match ..\\steamapps\\common\\Valheim", 
+                        "Abnormal path detected", 
+                        MessageBoxButton.YesNo, 
+                        MessageBoxImage.Warning
+                    );
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        setFolder(folder);
+                    }
+                } 
+                else
+                {
+                    setFolder(folder);
                 }
+
+                
+            }
+        }
+
+        private void setFolder(string folder)
+        {
+            Properties.Settings.Default.ValheimPath = folder;
+            Properties.Settings.Default.Save();
+            tbValheimFolder.Text = folder;
+            Session.valheimFolder = folder;
+            bool haveFolder = tbValheimFolder.Text != "";
+            btnPatch.IsEnabled = haveFolder;
+            btnClearPlugins.IsEnabled = haveFolder;
+            btnClearConfig.IsEnabled = haveFolder;
+            btnManageMods.IsEnabled = haveFolder;
+            btnExportPack.IsEnabled = haveFolder && isCustomManifest;
+            btnImportPack.IsEnabled = haveFolder;
+            if (isCustomManifest)
+            {
+                loadManifest();
+                readPluginsManifest();
+                needRePatch();
             }
         }
 

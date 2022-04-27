@@ -1,6 +1,4 @@
-﻿Valheim Patcher
-
-===
+# Valheim Patcher
 
 ### Open source Valheim modpack patcher.
 

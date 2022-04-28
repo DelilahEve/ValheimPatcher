@@ -57,5 +57,10 @@ namespace ValheimPatcher
         {
             return (package + name).GetHashCode();
         }
+
+        public bool isBepInEx()
+        {
+            return package == "denikson" && name == "BepInExPack_Valheim";
+        }
     }
 }

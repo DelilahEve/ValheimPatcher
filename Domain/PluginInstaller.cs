@@ -31,7 +31,14 @@ namespace ValheimPatcher
         public PluginInstaller()
         {
             this.mods = Session.resolver.getResolvedMods();
-            Directory.CreateDirectory("temp\\plugins");
+            try
+            {
+                Directory.CreateDirectory("temp\\plugins");
+            } 
+            catch (Exception e)
+            {
+                Util.writeErrorFile(e);
+            }
         }
 
         /// <summary>
@@ -80,17 +87,14 @@ namespace ValheimPatcher
         /// <param name="mod">mod/plugin to install</param>
         private void install(ModListItem mod)
         {
-            string zipLocation = "temp\\" + mod.name + ".zip";
-            string extractTo = "temp\\plugin_staging";
-            string tempDest = "temp\\plugins";
-            string finalDest = "\\BepInEx\\plugins";
-            if (!Directory.Exists(extractTo))
-            {
-                Directory.CreateDirectory(extractTo);
-            }
-            Session.log("Installing " + mod.name);
             try
             {
+                string zipLocation = "temp\\" + mod.name + ".zip";
+                string extractTo = "temp\\plugin_staging";
+                string tempDest = "temp\\plugins";
+                string finalDest = "\\BepInEx\\plugins";
+                Directory.CreateDirectory(extractTo);
+                Session.log("Installing " + mod.name);
                 ZipFile.ExtractToDirectory(zipLocation, extractTo, true);
                 moveModFiles(mod, tempDest, finalDest, extractTo, false);
                 FileSystem.DeleteDirectory(extractTo, DeleteDirectoryOption.DeleteAllContents);
@@ -105,79 +109,88 @@ namespace ValheimPatcher
 
         private void moveModFiles(ModListItem mod, string destination, string finalDestination, string source, bool folderAdded)
         {
-            // Ensure directory
-            if (!Directory.Exists(destination))
+            try
             {
-                Directory.CreateDirectory(destination);
-            }
-            // Basic plugin files that are not needed for running the mods
-            List<string> ignoreFiles = new();
-            ignoreFiles.Add("icon.png");
-            ignoreFiles.Add("readme.md");
-            ignoreFiles.Add("manifest.json");
-
-            // Get files to move
-            string[] files = Directory.GetFiles(source);
-            List<string> fileList = new();
-            fileList.AddRange(files);
-            // Remove files that should be ignored from list
-            fileList.RemoveAll((item) => ignoreFiles.Contains(item.ToLower()));
-            // Move mod files
-            foreach (string file in files)
-            {
-                LocalPluginMeta meta = Session.pluginManifest.findMeta(mod.name);
-                try
+                // Ensure directory
+                if (!Directory.Exists(destination))
                 {
-                    string fileName = Path.GetFileName(file);
-                    if (!ignoreFiles.Contains(fileName.ToLower()))
+                    Directory.CreateDirectory(destination);
+                }
+                // Basic plugin files that are not needed for running the mods
+                List<string> ignoreFiles = new();
+                ignoreFiles.Add("icon.png");
+                ignoreFiles.Add("readme.md");
+                ignoreFiles.Add("manifest.json");
+
+                // Get files to move
+                string[] files = Directory.GetFiles(source);
+                List<string> fileList = new();
+                fileList.AddRange(files);
+                // Remove files that should be ignored from list
+                fileList.RemoveAll((item) => ignoreFiles.Contains(item.ToLower()));
+                // Move mod files
+                foreach (string file in files)
+                {
+                    LocalPluginMeta meta = Session.pluginManifest.findMeta(mod.name);
+                    try
                     {
-                        string metaPath = finalDestination + "\\" + fileName;
-                        if (meta != null)
+                        string fileName = Path.GetFileName(file);
+                        if (!ignoreFiles.Contains(fileName.ToLower()))
                         {
-                            if (!meta.files.Contains(metaPath)) meta.files.Add(metaPath);
-                        }
-                        else
-                        {
-                            meta = new();
-                            meta.modName = mod.name;
-                            meta.modPackage = mod.package;
-                            meta.files = new();
-                            meta.files.Add(metaPath);
-                            if (!Session.pluginManifest.meta.Contains(meta))
+                            string metaPath = finalDestination + "\\" + fileName;
+                            if (meta != null)
                             {
-                                Session.pluginManifest.meta.Add(meta);
+                                if (!meta.files.Contains(metaPath)) meta.files.Add(metaPath);
+                            }
+                            else
+                            {
+                                meta = new();
+                                meta.modName = mod.name;
+                                meta.modPackage = mod.package;
+                                meta.files = new();
+                                meta.files.Add(metaPath);
+                                if (!Session.pluginManifest.meta.Contains(meta))
+                                {
+                                    Session.pluginManifest.meta.Add(meta);
+                                }
+                            }
+                            // Move zip file into staging directory
+                            File.Move(file, destination + "\\" + fileName, true);
+                            // Check for existing version of file and take it instead if present
+                            string existingFile = Session.valheimFolder + metaPath;
+                            string fileExt = Path.GetExtension(fileName);
+                            if (fileExt != ".dll" && File.Exists(existingFile))
+                            {
+                                File.Copy(existingFile, destination + "\\" + fileName, true);
                             }
                         }
-                        // Move zip file into staging directory
-                        File.Move(file, destination + "\\" + fileName, true);
-                        // Check for existing version of file and take it instead if present
-                        string existingFile = Session.valheimFolder + metaPath;
-                        string fileExt = Path.GetExtension(fileName);
-                        if (fileExt != ".dll" && File.Exists(existingFile))
-                        {
-                            File.Copy(existingFile, destination + "\\" + fileName, true);
-                        }
                     }
-                } catch (Exception e)
-                {
-                    Session.log("Error moving mod files for " + meta.modName + ": " + e.GetType().Name);
-                    Util.writeErrorFile(e);
+                    catch (Exception e)
+                    {
+                        Session.log("Error moving mod files for " + meta.modName + ": " + e.GetType().Name);
+                        Util.writeErrorFile(e);
+                    }
                 }
-            }
 
-            // Check for child directories
-            string[] folders = Directory.GetDirectories(source);
-            foreach (string folder in folders)
+                // Check for child directories
+                string[] folders = Directory.GetDirectories(source);
+                foreach (string folder in folders)
+                {
+                    string newDestination = destination;
+                    string newFinalDestination = finalDestination;
+                    if (!folderAdded)
+                    {
+                        newDestination += ("\\" + mod.name);
+                        newFinalDestination += ("\\" + mod.name);
+                    }
+
+                    moveModFiles(mod, newDestination, newFinalDestination, folder, true);
+                }
+            } 
+            catch (Exception e)
             {
-                string newDestination = destination;
-                string newFinalDestination = finalDestination;
-                if (!folderAdded)
-                {
-                    newDestination += ("\\" + mod.name);
-                    newFinalDestination += ("\\" + mod.name);
-                }
-
-                moveModFiles(mod, newDestination, newFinalDestination, folder, true);
+                Session.log("Error occurred installing " + mod.name);
+                Util.writeErrorFile(e);
             }
         }
 
@@ -187,12 +200,19 @@ namespace ValheimPatcher
         /// </summary>
         private void installComplete()
         {
-            completed++;
-            if (completed == awaiting)
+            try
             {
-                FileSystem.MoveDirectory("temp\\plugins", Session.valheimFolder + "\\BepInEx\\plugins", true);
-                Session.log("Plugins installed");
-                onDoneInstall();
+                completed++;
+                if (completed == awaiting)
+                {
+                    FileSystem.MoveDirectory("temp\\plugins", Session.valheimFolder + "\\BepInEx\\plugins", true);
+                    Session.log("Plugins installed");
+                    onDoneInstall();
+                }
+            } 
+            catch (Exception e)
+            {
+                Util.writeErrorFile(e);
             }
         }
 
@@ -213,9 +233,17 @@ namespace ValheimPatcher
         /// <param name="onComplete">action to take when complete</param>
         static void download(ModListItem mod, string saveAs, Action<ModListItem> onComplete)
         {
-            WebClient client = new();
-            client.DownloadFileAsync(new Uri(mod.downloadUrl), saveAs);
-            client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { onComplete(mod); };
+            try
+            {
+                WebClient client = new();
+                client.DownloadFileAsync(new Uri(mod.downloadUrl), saveAs);
+                client.DownloadFileCompleted += (object sender, AsyncCompletedEventArgs e) => { onComplete(mod); };
+            }
+            catch (Exception e)
+            {
+                onComplete(mod);
+                Util.writeErrorFile(e);
+            }
         }
 
     }

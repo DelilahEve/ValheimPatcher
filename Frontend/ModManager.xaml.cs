@@ -63,11 +63,8 @@ namespace ValheimPatcher.Frontend
             try
             {
                 string dependency = tbDependencyString.Text.Trim();
-                ModListItem mod = new ModListItem();
-                string[] meta = dependency.Split("-");
-                mod.package = meta[0];
-                mod.name = meta[1];
-                if (mod.package == "denikson" && mod.name == "BepInExPack_Valheim")
+                ModListItem mod = Util.asMod(dependency);
+                if (mod.isBepInEx())
                 {
                     MessageBox.Show("BepInEx is assumed to be required as a default, it's not necessary to add it as a mod.", "BepInEx", MessageBoxButton.OK);
                 }

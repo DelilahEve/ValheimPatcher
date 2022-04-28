@@ -23,7 +23,7 @@ namespace ValheimPatcher
         private bool resolvingDependencies = false;
 
         private List<ModListItem> resolved = new();
-        private List<string> dependencies = new();
+        private List<ModListItem> dependencies = new();
 
         /// <summary>
         /// Begin resolving plugins
@@ -136,9 +136,10 @@ namespace ValheimPatcher
                     // saves resources fetching duplicates if multiple mods rely on the same thing
                     foreach (string dependency in dependencies)
                     {
-                        if (!this.dependencies.Contains(dependency) && !dependency.StartsWith("denikson-BepInExPack_Valheim"))
+                        ModListItem dMod = Util.asMod(dependency);
+                        if (!this.dependencies.Contains(dMod) && !dMod.isBepInEx())
                         {
-                            this.dependencies.Add(dependency);
+                            this.dependencies.Add(dMod);
                         }
                     }
                 }
@@ -160,7 +161,7 @@ namespace ValheimPatcher
             resolvedCount++;
             if (mod != null)
             {
-                if (mod.downloadUrl != null && mod.downloadUrl.Trim() != "")
+                if (mod.downloadUrl != null && mod.downloadUrl.Trim() != "" && !resolved.Contains(mod))
                 {
                     resolved.Add(mod);
                     Session.log("Resolved " + mod.name);
@@ -188,10 +189,10 @@ namespace ValheimPatcher
             Session.log("Resolving dependencies...");
             resolvingDependencies = true;
             needResolving += dependencies.Count;
-            foreach (string dependency in dependencies)
+            foreach (ModListItem dependency in dependencies)
             {
                 // If BepInEx dependency, skip it, this is already accounted for
-                if (dependency.StartsWith("denikson-BepInExPack_Valheim"))
+                if (dependency.isBepInEx())
                 {
                     onResolved();
                 }
@@ -201,11 +202,7 @@ namespace ValheimPatcher
                     try
                     {
                         Session.log("Resolving " + dependency);
-                        ModListItem mod = new ModListItem();
-                        string[] meta = dependency.Split("-");
-                        mod.package = meta[0];
-                        mod.name = meta[1];
-                        fetchPluginInfo(mod);
+                        fetchPluginInfo(dependency);
                     }
                     catch (Exception e)
                     {

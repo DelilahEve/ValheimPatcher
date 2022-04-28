@@ -216,10 +216,6 @@ namespace ValheimPatcher
                     readPluginsManifest();
                     readManifest(json);
                 }
-                else
-                {
-                    Session.log("Valheim folder not set, please set the folder to load a local manifest");
-                }
             }
             catch (Exception e)
             {

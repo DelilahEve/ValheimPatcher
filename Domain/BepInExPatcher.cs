@@ -68,8 +68,7 @@ namespace ValheimPatcher
             try
             {
                 Session.log("Installing BepInEx...");
-                ZipFile.ExtractToDirectory("temp\\BepInEx.zip", "temp\\BepInEx_data", true);
-                FileSystem.MoveDirectory("temp\\BepInEx_data\\BepInExPack_Valheim", Session.valheimFolder, true);
+                ZipFile.ExtractToDirectory("temp\\BepInEx.zip", Session.valheimFolder, true);
                 Session.log("BepInEx Installed");
                 onReady();
             }

@@ -1,6 +1,4 @@
-﻿Valheim Patcher
-
-===
+# Valheim Patcher
 
 ### Open source Valheim modpack patcher.
 
@@ -17,7 +15,7 @@ Add a `config.json` file to the same folder as the executable with:
     "manifestOptions": [
         {
             "name": "Custom",
-            "manifestUrl": ""
+            "manifestUrl": "https://some-manifest.url/manifest.json"
         },
         ...
     ]
